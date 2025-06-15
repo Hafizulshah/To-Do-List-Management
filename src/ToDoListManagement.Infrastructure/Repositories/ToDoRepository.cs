@@ -32,7 +32,15 @@ public class ToDoRepository : IToDoRepository
 
     public async Task UpdateAsync(ToDoItem item)
     {
-        _context.ToDoItems.Update(item);
+        var existing = await _context.ToDoItems.FindAsync(item.Id);
+        if (existing == null) return;
+
+        // Update only the necessary fields
+        existing.Title = item.Title;
+        existing.Description = item.Description;
+        existing.DueDate = item.DueDate;
+        existing.IsCompleted = item.IsCompleted;
+
         await _context.SaveChangesAsync();
     }
 
