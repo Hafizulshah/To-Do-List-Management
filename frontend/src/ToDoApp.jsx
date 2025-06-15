@@ -1,7 +1,9 @@
+import React from 'react';
 import { useEffect, useState } from 'react';
-import { BiCheckSquare, BiPlusCircle, BiSolidCaretDownCircle, BiPencil, BiTrash, BiSave, BiX } from 'react-icons/bi';
+import { BiCheckSquare, BiPlusCircle, BiSolidCaretDownCircle, BiPencil, BiTrash, BiSave, BiX} from 'react-icons/bi';
 import axios from 'axios';
-import './ToDoApp.css'
+import './ToDoApp.css';
+
 
 export default function ToDoApp() {
   const [todos, setTodos] = useState([]);
@@ -15,19 +17,27 @@ export default function ToDoApp() {
   const [sortOption, setSortOption] = useState('created');
 
   const loadTodos = async () => {
-    const res = await axios.get('/api/todo');
-    let sorted = [...res.data];
-    if (sortOption === 'created') {
-      sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    } else if (sortOption === 'due') {
-      sorted.sort((a, b) =>
-        a.dueDate && b.dueDate
-          ? new Date(a.dueDate) - new Date(b.dueDate)
-          : !a.dueDate ? 1 : -1
-      );
+    try {
+      const res = await axios.get('/api/todo');
+      let sorted = [...res.data];
+      if (sortOption === 'created') {
+        sorted.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      } else if (sortOption === 'due') {
+        sorted.sort((a, b) =>
+          a.dueDate && b.dueDate
+            ? new Date(a.dueDate) - new Date(b.dueDate)
+            : !a.dueDate ? 1 : -1
+        );
+      }
+      setTodos(sorted);
+    } catch (err) {
+      console.error('Failed to load todos:', err);
     }
-    setTodos(sorted);
   };
+
+  useEffect(() => {
+    loadTodos();
+  }, []);
 
   useEffect(() => {
     loadTodos();
@@ -36,16 +46,27 @@ export default function ToDoApp() {
   const handleAdd = async () => {
     if (!title.trim()) return alert('Title is required');
 
-    await axios.post('/api/todo', {
-      title,
-      description,
-      dueDate: dueDate || null,
-    });
+    try {
+      await axios.post('/api/todo', {
+        title,
+        description,
+        dueDate: dueDate || null,
+      });
 
-    setTitle('');
-    setDescription('');
-    setDueDate('');
-    loadTodos();
+      setTitle('');
+      setDescription('');
+      setDueDate('');
+      loadTodos();
+    } catch (error) {
+      if (error.response && error.response.data && error.response.data.errors) {
+        const messages = Object.values(error.response.data.errors)
+          .flat()
+          .join('\n');
+        alert(messages);
+      } else {
+        alert('Something went wrong.');
+      }
+    }
   };
 
   const startEditing = (todo) => {
@@ -121,56 +142,56 @@ export default function ToDoApp() {
         </div>
 
         {/* Sort Options */}
-        <div className="sort-bar">
+        <div className='sort-bar'>
           <label>Sort by:</label>
-          <div className="sort-dropdown">
+          <div className='sort-dropdown'>
             <select
               value={sortOption}
               onChange={(e) => setSortOption(e.target.value)}
             >
-              <option value="created">Created Date</option>
-              <option value="due">Due Date</option>
+              <option value='created'>Created Date</option>
+              <option value='due'>Due Date</option>
             </select>
-            <BiSolidCaretDownCircle className="sort-icon" />
+            <BiSolidCaretDownCircle className='sort-icon' />
           </div>
         </div>
 
         {/* List */}
         {todos.map((todo) => (
-          <div key={todo.id} className="todo-card">
+          <div key={todo.id} className='todo-card'>
             {editingId === todo.id ? (
               <>
                 <input
-                  placeholder="Title"
+                  placeholder='Title'
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
                 />
                 <textarea
-                  placeholder="Description (Optional)"
+                  placeholder='Description (Optional)'
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
                 />
                 <input
-                  type="date"
+                  type='date'
                   value={editDueDate}
                   onChange={(e) => setEditDueDate(e.target.value)}
                 />
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={saveEdit} className="btn btn-green">
+                  <button onClick={saveEdit} className='btn btn-green'>
                     Save <BiSave />
                   </button>
-                  <button onClick={cancelEdit} className="btn btn-red">
+                  <button onClick={cancelEdit} className='btn btn-red'>
                     <BiX /> Cancel
                   </button>
                 </div>
               </>
             ) : (
               <>
-                <div className="todo-row">
-                  <div className="todo-main">
-                    <div className="todo-title-section">
+                <div className='todo-row'>
+                  <div className='todo-main'>
+                    <div className='todo-title-section'>
                       <input
-                        type="checkbox"
+                        type='checkbox'
                         checked={todo.isCompleted}
                         onChange={() => toggleComplete(todo)}
                         style={{ marginRight: '0.5rem' }}
@@ -185,11 +206,11 @@ export default function ToDoApp() {
                       {todo.dueDate && <> | Due: {new Date(todo.dueDate).toLocaleDateString()}</>}
                     </p>
                   </div>
-                  <div className="todo-actions-vertical">
-                    <button onClick={() => startEditing(todo)} className="btn btn-blue">
+                  <div className='todo-actions-vertical'>
+                    <button onClick={() => startEditing(todo)} className='btn btn-blue'>
                       <BiPencil /> Edit
                     </button>
-                    <button onClick={() => handleDelete(todo.id)} className="btn btn-red">
+                    <button onClick={() => handleDelete(todo.id)} className='btn btn-red'>
                       <BiTrash /> Delete
                     </button>
                   </div>

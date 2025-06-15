@@ -31,20 +31,27 @@ public class ToDoController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult> Create(ToDoItem item)
+    public async Task<ActionResult> Create([FromBody] ToDoItem item)
     {
-        if (string.IsNullOrWhiteSpace(item.Title))
-            return BadRequest("Title is required");
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
         await _repository.AddAsync(item);
         return CreatedAtAction(nameof(GetById), new { id = item.Id }, item);
     }
 
     [HttpPut("{id}")]
-    public async Task<ActionResult> Update(Guid id, ToDoItem item)
+    public async Task<ActionResult> Update(Guid id, [FromBody] ToDoItem item)
     {
         if (id != item.Id)
             return BadRequest("Mismatched ID");
+
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
+
+        var existing = await _repository.GetByIdAsync(id);
+        if (existing == null)
+            return NotFound();
 
         await _repository.UpdateAsync(item);
         return NoContent();
